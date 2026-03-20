@@ -11,6 +11,7 @@ ptHigh = 100.0
 ptCut = 1.0
 alphas = 0.12
 CA = 3
+CF = 4 / 3
 
 num_events = np.arange(1, 4000, 20)
 
@@ -74,7 +75,7 @@ def ptFromSudakov(sudakovValue):
     """Returns the pt value that solves the relation
     Sudakov = sudakovValue (for 0 < sudakovValue < 1)
     """
-    norm = 2 * CA / pi
+    norm = CF / pi  # CF = 4/3
     # r = Sudakov = exp(-alphas * norm * L^2)
     # --> log(r) = -alphas * norm * L^2
     # --> L^2 = log(r)/(-alphas*norm)
