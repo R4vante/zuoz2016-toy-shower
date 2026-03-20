@@ -12,48 +12,30 @@ ptCut = 1.0
 alphas = 0.12
 CA = 3
 
-num_events = np.arange(1, 4000, 20)
+num_events = np.arange(1, 10000, 50)
 
 
 def main():
-    # list of averages per event
     averages = []
 
     for events in num_events:
-        # total number of emissions during the event
         total_emissions = 0
 
         for iev in range(0, events):
             emissions_in_event = event()
             total_emissions += emissions_in_event
 
-        # calculate the average created number of particles
+        averages.append(average)
         average = total_emissions / events
 
-        # append the averages to the list
-        averages.append(average)
-
-    # from the plot we see that the
+    average = np.mean(averages[2000 / 50 :])
+    print(f"Average jets per event: {average:.2f}")
     fig, ax = plt.subplots(1, 1, figsize=(15, 10))
-
-    # Plot
     ax.plot(num_events, averages)
-
-    # Make plot nicer
-    ax.grid(True)
-    ax.set_xlabel(r"$N_{events}$", fontsize=12)
-    ax.set_ylabel(r"$\left< N \right>_{created} $", fontsize=12)
-    ax.set_title("The average number of particles created per gluon jet")
-
     plt.show()
-
-    # Print the average number of created particles by averaging from the converged regime ~400 events
-    average_jets = np.mean(averages[int(400 / 50) :])
-    print(f"Average jets per event: {average_jets:.2f}")
 
 
 def event():
-    # counter to count the gluon jets
     count = 0
     # start with maximum possible value of Sudakov
     sudakov = 1
@@ -65,7 +47,7 @@ def event():
         # if pt falls below the cutoff, event is finished
         if pt < ptCut:
             break
-        # increment counter if pt greater than cutoff.
+
         count += 1
     return count
 
