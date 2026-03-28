@@ -17,6 +17,75 @@ c_charge = 3
 num_events = np.arange(1, 10, 1)
 
 
+def main():
+    # list of averages per event
+    average_particles = []
+    average_energy = []
+    for events in num_events:
+        # total number of emissions during the event
+        total_particles = 0
+        total_energy = 0
+
+        for iev in range(0, events):
+            count, particles = event(c_charge)
+
+            # analyze cone
+            ni, ei = analyze_jet(particles, R_cone=1)
+
+            total_particles += ni
+            total_energy += ei
+
+        # calculate the average created number of particles and energy in lightcone
+        average_ni = total_particles / events
+        average_ei = total_energy / events
+
+        # append the averages to the list
+        average_particles.append(average_ni)
+        average_energy.append(average_ei)
+
+    # from the plot we see that the
+    fig, ax = plt.subplots(1, 1, figsize=(15, 10))
+
+    # Plot
+    ax.plot(num_events, average_particles)
+
+    # Make plot nicer
+    ax.grid(True)
+    ax.set_xlabel(r"$N_{events}$", fontsize=12)
+    ax.set_ylabel(r"$\left< N \right>_{created} $", fontsize=12)
+    ax.set_title("The average number of particles created per gluon jet")
+
+    plt.show()
+
+
+def analyze_jet(particles_p4, R_cone=0.4):
+    """
+    Computes the number of particles and energy inside the light-conde.
+    """
+
+    n_in = 0
+    energy_in = 0
+
+    for p in particles_p4:
+        E, px, py, pz = p
+
+        # ensure that the particle is moving forward
+        if pz > 0:
+            # Calculate the angular distance in x- and y-direction
+            theta_x = px / pz
+            theta_y = py / pz
+
+            # Calculate total distance
+            dtheta = np.sqrt(theta_x**2 + theta_y**2)
+
+            # check if is in light-cone
+            if dtheta <= R_cone:
+                n_in += 1
+                energy_in += E
+
+    return n_in, energy_in
+
+
 def get_rotation_matrix(parent_vec):
     """Returns a matrix that rotates the z-unit vector [0, 0, 1] to align with the parent_vec"""
     norm = np.linalg.norm(parent_vec)
@@ -37,38 +106,6 @@ def get_rotation_matrix(parent_vec):
     vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
 
     return np.eye(3) + vx + np.dot(vx, vx) * ((1 - c) / (s**2))
-
-
-def main():
-    # list of averages per event
-    averages = []
-    for events in num_events:
-        # total number of emissions during the event
-        total_emissions = 0
-
-        for iev in range(0, events):
-            emissions_in_event = event(c_charge)
-            total_emissions += emissions_in_event[0]
-        # calculate the average created number of particles
-
-        average = total_emissions / events
-
-        # append the averages to the list
-        averages.append(average)
-
-    # from the plot we see that the
-    fig, ax = plt.subplots(1, 1, figsize=(15, 10))
-
-    # Plot
-    ax.plot(num_events, averages)
-
-    # Make plot nicer
-    ax.grid(True)
-    ax.set_xlabel(r"$N_{events}$", fontsize=12)
-    ax.set_ylabel(r"$\left< N \right>_{created} $", fontsize=12)
-    ax.set_title("The average number of particles created per gluon jet")
-
-    plt.show()
 
 
 def event(c_charge):
