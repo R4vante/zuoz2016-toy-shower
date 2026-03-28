@@ -12,48 +12,37 @@ ptCut = 1.0
 alphas = 0.12
 CA = 3
 CF = 4 / 3
-c_charge = 3
+c_charge = 4 / 3
 
-num_events = np.arange(1, 10, 1)
+num_events = 200
 
 
 def main():
     # list of averages per event
-    average_particles = []
+    R_values = np.linspace(0.01, 10.0, 100)
     average_energy = []
-    for events in num_events:
-        # total number of emissions during the event
-        total_particles = 0
-        total_energy = 0
 
-        for iev in range(0, events):
+    for R_test in R_values:
+        event_energy = []
+        for iev in range(0, num_events):
             count, particles = event(c_charge)
 
             # analyze cone
-            ni, ei = analyze_jet(particles, R_cone=1)
-
-            total_particles += ni
-            total_energy += ei
-
-        # calculate the average created number of particles and energy in lightcone
-        average_ni = total_particles / events
-        average_ei = total_energy / events
-
-        # append the averages to the list
-        average_particles.append(average_ni)
-        average_energy.append(average_ei)
+            ni, ei = analyze_jet(particles, R_cone=R_test)
+            event_energy.append(ei)
+        average_energy.append(np.mean(event_energy))
 
     # from the plot we see that the
     fig, ax = plt.subplots(1, 1, figsize=(15, 10))
 
     # Plot
-    ax.plot(num_events, average_particles)
+    ax.plot(R_values, average_energy, "-o")
 
     # Make plot nicer
     ax.grid(True)
-    ax.set_xlabel(r"$N_{events}$", fontsize=12)
-    ax.set_ylabel(r"$\left< N \right>_{created} $", fontsize=12)
-    ax.set_title("The average number of particles created per gluon jet")
+    ax.set_xlabel(r"$R_{cone}$", fontsize=12)
+    ax.set_ylabel(r"$\left< E \right>_{in} $", fontsize=12)
+    ax.set_title("Jet energy profile")
 
     plt.show()
 
@@ -166,11 +155,19 @@ def event(c_charge):
         phi = random() * 2 * np.pi  # sample random angle between  0 and 2*pi
 
         E_p = parent_p4[0]
+        E1 = z_sample * E_p
+        E2 = (1 - z_sample) * E_p
+
+        # solve for E^2 = px^2 + py^2 + pz^2
+
+        pz1 = np.sqrt(max(0, E1**2 - pt**2))
+        pz2 = np.sqrt(max(0, E2**2 - pt**2))
+
         p1_loc = np.array(
-            [pt * np.cos(phi), pt * np.sin(phi), z_sample * E_p]
+            [pt * np.cos(phi), pt * np.sin(phi), pz1]
         )  # local momentum first child
         p2_loc = np.array(
-            [-pt * np.cos(phi), pt * np.sin(phi), (1 - z_sample) * E_p]
+            [-pt * np.cos(phi), -pt * np.sin(phi), pz2]
         )  # local momentum second child
 
         R = get_rotation_matrix(parent_p4[1:])  # get the rotation matrix
@@ -184,6 +181,7 @@ def event(c_charge):
 
         all_p4.append(p2_p4)
 
+    all_p4.append(parent_p4)
     return count, all_p4
 
 
