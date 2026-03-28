@@ -129,11 +129,19 @@ def event(c_charge):
         phi = random() * 2 * np.pi  # sample random angle between  0 and 2*pi
 
         E_p = parent_p4[0]
+        E1 = z_sample * E_p
+        E2 = (1 - z_sample) * E_p
+
+        # solve for E^2 = px^2 + py^2 + pz^2
+
+        pz1 = np.sqrt(max(0, E1**2 - pt**2))
+        pz2 = np.sqrt(max(0, E2**2 - pt**2))
+
         p1_loc = np.array(
-            [pt * np.cos(phi), pt * np.sin(phi), z_sample * E_p]
+            [pt * np.cos(phi), pt * np.sin(phi), pz1]
         )  # local momentum first child
         p2_loc = np.array(
-            [-pt * np.cos(phi), pt * np.sin(phi), (1 - z_sample) * E_p]
+            [-pt * np.cos(phi), -pt * np.sin(phi), pz2]
         )  # local momentum second child
 
         R = get_rotation_matrix(parent_p4[1:])  # get the rotation matrix
@@ -147,6 +155,7 @@ def event(c_charge):
 
         all_p4.append(p2_p4)
 
+    all_p4.append(parent_p4)
     return count, all_p4
 
 
