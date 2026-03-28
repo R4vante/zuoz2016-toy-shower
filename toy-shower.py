@@ -11,20 +11,21 @@ ptHigh = 100.0
 ptCut = 1.0
 alphas = 0.12
 CA = 3
+CF = 4 / 3
+c_charge = 3
 
-num_events = np.arange(1, 4000, 20)
+num_events = np.arange(1, 10, 1)
 
 
 def main():
     # list of averages per event
     averages = []
-
     for events in num_events:
         # total number of emissions during the event
         total_emissions = 0
 
         for iev in range(0, events):
-            emissions_in_event = event()
+            emissions_in_event = event(c_charge)
             total_emissions += emissions_in_event
 
         # calculate the average created number of particles
@@ -52,29 +53,70 @@ def main():
     print(f"Average jets per event: {average_jets:.2f}")
 
 
-def event():
+def event(c_charge):
     # counter to count the gluon jets
     count = 0
     # start with maximum possible value of Sudakov
     sudakov = 1
+
+    # part a: save the momenta
+    pts_in_event = []
+    z_values = []
     while True:
         # scale it by a random number
         sudakov *= random()
         # deduce the corresponding pt
-        pt = ptFromSudakov(sudakov)
+        pt = ptFromSudakov(sudakov, c_charge)
         # if pt falls below the cutoff, event is finished
         if pt < ptCut:
             break
         # increment counter if pt greater than cutoff.
         count += 1
+        pts_in_event.append(pt)
+
+        # Part (b): calculate z
+
+        # define z limits: z_min = (pt**2)/(Q**2)   z_max = 1 - z_min
+        z_min = (pt**2) / (ptHigh**2)
+        z_max = 1 - z_min
+
+        # create sampling list (I use linspace instead of arange)
+        z_grid = np.linspace(z_min, z_max, 100)
+
+        # calculate the splitting function
+        if c_charge == CA:
+            p_vals = 2 * c_charge * ((1 - z_grid) / z_grid + z_grid / (1 - z_grid))
+        elif c_charge == CF:
+            p_vals = c_charge * (1 + z_grid**2) / (1 - z_grid)
+        else:
+            raise ValueError(
+                f"Color charge of {c_charge} not defined. use 3 (gluons) or 4/3 (quarks)"
+            )
+
+        # normalize
+        p_norm = p_vals / np.sum(p_vals)
+
+        # sample z-values
+        z_sample = np.random.choice(z_grid, p=p_norm)
+        z_values.append(z_sample)
+    print(z_values)
     return count
 
 
-def ptFromSudakov(sudakovValue):
+def ptFromSudakov(sudakovValue, c_charge):
     """Returns the pt value that solves the relation
     Sudakov = sudakovValue (for 0 < sudakovValue < 1)
     """
-    norm = 2 * CA / pi
+
+    norm = c_charge / pi
+    if c_charge == CA:
+        norm *= 2
+    elif c_charge == CF:
+        norm = norm
+    else:
+        raise ValueError(
+            f"Color charge of {c_charge} not defined. use 3 (gluons) or 4/3 (quarks)"
+        )
     # r = Sudakov = exp(-alphas * norm * L^2)
     # --> log(r) = -alphas * norm * L^2
     # --> L^2 = log(r)/(-alphas*norm)
